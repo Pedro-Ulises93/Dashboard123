@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Cabidas - TERRITORIA</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="branding">
+                <div class="brand-logo">TERRITORIA</div>
+                <h1>Analisis de Cabidas</h1>
+                <div class="powered-by">Powered by <span class="gh-symbols">^{}[]</span> <span class="gh-logo">Grasshopper</span></div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Configuration & Inputs -->
+            <div class="left-panel">
+                <section class="card">
+                    <h2>Grasshopper file (.gh)</h2>
+                    <div class="file-selector">
+                        <label for="ghFileInput" class="file-input-label">
+                            <span class="file-input-button">Browse Files</span>
+                            <input type="file" id="ghFileInput" accept=".gh,.ghx" style="display: none;">
+                        </label>
+                        <div class="file-info">
+                            <span id="selectedFileName" class="file-name">Filename.gh</span>
+                            <button id="clearFile" class="btn btn-secondary" style="display: none;">Clear</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" id="resultsSection" style="display: none;">
+                    <h2>Definition Values</h2>
+                    <div id="resultsInfo">
+                        <p id="executionStatus"></p>
+                        <div id="outputsContainer">
+                            <!-- Output values will be displayed here -->
+                        </div>
+                        <details style="margin-top: 20px;">
+                            <summary style="cursor: pointer; color: #1a1a1a; font-weight: 600;">🔍 Debug: View Raw Response</summary>
+                            <pre id="rawResponse" style="background: #f5f5f5; padding: 12px; border-radius: 3px; overflow-x: auto; font-size: 11px; max-height: 300px; overflow-y: auto; margin-top: 10px; border: 1px solid #d0d0d0;"></pre>
+                        </details>
+                    </div>
+                </section>
+
+                <section class="card" id="ioSection" style="display: none;">
+                    <h2>Definition I/O</h2>
+                    <div id="ioInfo">
+                        <p class="loading">Loading inputs and outputs...</p>
+                    </div>
+                </section>
+
+                <section class="card" id="inputsSection" style="display: none;">
+                    <h2>Input Values</h2>
+                    <div id="inputsContainer">
+                        <!-- Dynamic input fields will be generated here -->
+                    </div>
+                </section>
+
+                <section class="card" id="executeSection" style="display: none;">
+                    <button id="executeBtn" class="btn btn-primary" style="width: 100%;">Execute</button>
+                </section>
+            </div>
+
+            <!-- Right Panel: 3D Viewer -->
+            <div class="right-panel">
+                <section class="card viewer-card">
+                    <h2>3D Visualizer</h2>
+                    <div style="margin-bottom: 15px;">
+                        <label for="jsonFileInput" class="file-input-label" style="display: block; margin-bottom: 8px;">
+                            <span class="file-input-button" style="font-size: 12px; padding: 6px 12px;">Load JSON File</span>
+                            <input type="file" id="jsonFileInput" accept=".json,.js" style="display: none;">
+                        </label>
+                        <small id="jsonFileName" style="color: #666; font-size: 11px;">No JSON file loaded</small>
+                    </div>
+                    <div id="viewerContainer">
+                        <canvas id="threeCanvas"></canvas>
+                    </div>
+                    <div class="viewer-controls">
+                        <button id="resetView" class="btn btn-secondary">Reset View</button>
+                        <button id="toggleWireframe" class="btn btn-secondary">Toggle Wireframe</button>
+                        <button id="testRenderer" class="btn btn-secondary" style="display: none;">Test Renderer</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+         
+        <!-- Debug Panel -->
+        <div id="debugPanel" class="card" style="position: fixed; bottom: 20px; right: 20px; width: 400px; max-height: 400px; overflow-y: auto; z-index: 1000; background: rgba(0,0,0,0.95); border: 2px solid #0f0; color: #0f0; font-family: 'Courier New', monospace; font-size: 11px; padding: 10px; display: block;">
+            <h3 style="color: #0f0; margin-bottom: 10px;">🔍 Debug Log</h3>
+            <div id="debugLog" style="max-height: 320px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px;"></div>
+            <div style="margin-top: 10px; font-size: 9px; color: #888; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button onclick="document.getElementById('debugLog').innerHTML=''; document.getElementById('logCount').textContent='0';" style="padding: 3px 8px; background: #f00; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 9px; margin-right: 5px;">Clear</button>
+                    Logs: <span id="logCount">0</span>
+                </div>
+                <button onclick="document.getElementById('debugPanel').style.display='none'" style="padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px;">✕ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Three.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+     
+    <!-- Debug logging must be defined first -->
+    <script>
+        // Global debug logging function
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+             
+            // Always log to console
+            if (type === 'error') {
+                console.error(logEntry);
+            } else if (type === 'warn') {
+                console.warn(logEntry);
+            } else {
+                console.log(logEntry);
+            }
+             
+            // On-screen debug panel
+            try {
+                const debugPanel = document.getElementById('debugPanel');
+                const debugLogEl = document.getElementById('debugLog');
+                if (debugPanel && debugLogEl) {
+                    debugPanel.style.display = 'block';
+                    const color = type === 'error' ? '#f00' : type === 'warn' ? '#ff0' : '#0f0';
+                    const div = document.createElement('div');
+                    div.style.color = color;
+                    div.style.marginBottom = '2px';
+                    div.textContent = logEntry;
+                    debugLogEl.appendChild(div);
+                    debugLogEl.scrollTop = debugLogEl.scrollHeight;
+                     
+                    // Keep only last 100 lines
+                    while (debugLogEl.children.length > 100) {
+                        debugLogEl.removeChild(debugLogEl.firstChild);
+                    }
+                     
+                    // Update log count
+                    const logCountEl = document.getElementById('logCount');
+                    if (logCountEl) {
+                        logCountEl.textContent = debugLogEl.children.length;
+                    }
+                } else {
+                    console.warn('Debug panel elements not found', {debugPanel: !!debugPanel, debugLogEl: !!debugLogEl});
+                }
+            } catch (e) {
+                console.error('Error updating debug panel:', e);
+            }
+        }
+         
+        // Test debug log on load
+        window.addEventListener('DOMContentLoaded', () => {
+            debugLog('Debug logging initialized');
+            debugLog('DOM fully loaded');
+        });
+         
+        // Also log immediately if DOM is already loaded
+        if (document.readyState === 'loading') {
+            // DOM is still loading
+        } else {
+            // DOM is already loaded
+            debugLog('DOM already loaded when script executed');
+        }
+         
+        // Verify critical elements exist
+        window.addEventListener('DOMContentLoaded', () => {
+            const elements = ['ghFileInput', 'executeBtn', 'debugPanel', 'debugLog', 'inputsSection'];
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) {
+                    console.error('CRITICAL: Element not found: ' + id);
+                    debugLog('CRITICAL: Element missing: ' + id, 'error');
+                } else {
+                    debugLog('Element found: ' + id);
+                }
+            });
+        });
+    </script>
+     
+    <script src="js/config.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/input-validator.js"></script>
+    <script src="js/main.js"></script>
+     
+    <!-- Initialize dashboard when DOM is ready -->
+    <script>
+        function initializeDashboard() {
+            if (window.dashboard) {
+                debugLog('Dashboard already initialized');
+                return;
+            }
+            debugLog('Initializing dashboard...');
+            try {
+                window.dashboard = new GrasshopperDashboard();
+                debugLog('Dashboard instance created');
+            } catch (e) {
+                debugLog('ERROR creating dashboard: ' + e.message, 'error');
+                debugLog('Stack: ' + (e.stack || 'no stack'), 'error');
+                console.error('Dashboard initialization error:', e);
+            }
+        }
+         
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboard);
+        } else {
+            // DOM already loaded
+            setTimeout(initializeDashboard, 100);
+        }
+    </script>
+     
+    <!-- Rhino3dm.js library for decoding Brep geometry - load async after main scripts -->
+    <script>
+        // Load rhino3dm.js asynchronously to avoid blocking page initialization
+        (function() {
+            debugLog('Attempting to load rhino3dm.js...');
+             
+            const script = document.createElement('script');
+            script.src = 'three.js/examples/jsm/libs/rhino3dm/rhino3dm.js';
+            script.async = true;
+            script.onload = function() {
+                debugLog('rhino3dm.js script tag loaded');
+                if (typeof rhino3dm !== 'undefined') {
+                    debugLog('rhino3dm function found, initializing...');
+                     
+                    // Get the base path for WASM files
+                    let scriptBasePath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+                    debugLog('WASM base path: ' + scriptBasePath);
+                     
+                    // Initialize rhino3dm with proper WASM path configuration
+                    const initOptions = {
+                        locateFile: function(path, prefix) {
+                            // path will be something like 'rhino3dm.wasm'
+                            const wasmPath = scriptBasePath + path;
+                            debugLog('Locating WASM file: ' + wasmPath);
+                            return wasmPath;
+                        }
+                    };
+                     
+                    debugLog('Calling rhino3dm() with options...');
+                    rhino3dm(initOptions).then((rhino) => {
+                        console.log('rhino3dm.js initialized successfully');
+                        window.rhino3dmReady = true;
+                        window.rhino3dm = rhino;
+                        debugLog('rhino3dm.js loaded and ready');
+                    }).catch((err) => {
+                        console.error('Failed to initialize rhino3dm.js:', err);
+                        const errorMsg = err.message || err.toString() || JSON.stringify(err);
+                        debugLog('Failed to initialize rhino3dm.js: ' + errorMsg, 'warn');
+                        debugLog('Error type: ' + (err.constructor ? err.constructor.name : typeof err), 'warn');
+                        if (err.stack) {
+                            debugLog('Error stack: ' + err.stack.substring(0, 200), 'warn');
+                        }
+                         
+                        // Check if WASM file exists
+                        fetch(scriptBasePath + 'rhino3dm.wasm', { method: 'HEAD' })
+                                .then(response => {
+                                    if (response.ok) {
+                                        debugLog('WASM file exists and is accessible', 'warn');
+                                    } else {
+                                        debugLog('WASM file not accessible: ' + response.status, 'warn');
+                                    }
+                                })
+                                .catch(fetchErr => {
+                                    debugLog('Cannot check WASM file: ' + fetchErr.message, 'warn');
+                                });
+                        }
+                    });
+                } else {
+                    debugLog('ERROR: rhino3dm function not found after script load', 'error');
+                }
+            };
+            script.onerror = function(error) {
+                console.warn('Failed to load rhino3dm.js script - Brep decoding will not be available');
+                debugLog('rhino3dm.js script failed to load - Brep decoding unavailable', 'warn');
+                debugLog('Script path: ' + script.src, 'warn');
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

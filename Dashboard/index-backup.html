@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis de Cabidas | TERRITORIA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
+        
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #262626;
+            --bg-button: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --accent-orange: #d4864a;
+            --border-red: #c94a30;
+            --border-subtle: #3a3a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Neue Haas Grotesk Display Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background-color: var(--bg-secondary);
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .header {
+            margin-bottom: 28px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            color: var(--text-primary);
+        }
+
+        .divider {
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .logo {
+            height: 14px;
+            width: auto;
+        }
+
+        .powered-by {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .powered-icons {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .powered-icons img {
+            height: 26px;
+            width: auto;
+        }
+
+        .powered-icons .plus {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-group {
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 0;
+        }
+
+        .form-group:first-child {
+            padding-top: 0;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: var(--text-primary);
+            font-weight: 400;
+        }
+
+        .file-input {
+            background-color: var(--bg-button);
+            border: none;
+            border-radius: 16px;
+            padding: 6px 14px;
+            color: var(--accent-orange);
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .file-input:hover {
+            background-color: #444;
+        }
+
+        .section-title {
+            font-size: 12px;
+            color: var(--text-primary);
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .section-content {
+            min-height: 24px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .execute-btn {
+            background-color: var(--bg-button);
+            border: none;
+            border-radius: 4px;
+            padding: 10px 24px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: inherit;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .execute-btn:hover {
+            background-color: #444;
+        }
+
+        .execute-btn:active {
+            transform: scale(0.98);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-primary);
+        }
+
+        .visualizer-container {
+            width: 100%;
+            height: 100%;
+            border: 3px dashed var(--border-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .visualizer-placeholder {
+            font-family: "Neue Haas Grotesk Display Pro", "Helvetica Neue", Helvetica, sans-serif;
+            font-size: clamp(28px, 5vw, 56px);
+            font-weight: 500;
+            color: var(--border-red);
+            letter-spacing: 4px;
+            text-align: center;
+            padding: 20px;
+            text-transform: uppercase;
+        }
+
+        #threeCanvas {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        #threeCanvas.active {
+            display: block;
+        }
+
+        #viewerContainer {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .loading {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .success {
+            color: #4caf50;
+        }
+
+        .error {
+            color: var(--border-red);
+        }
+    </style>
